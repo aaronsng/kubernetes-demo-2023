@@ -1,0 +1,56 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: rpc-server-deployment
+  labels:
+    app: rpc-server
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: rpc-server
+  template:
+    metadata:
+      labels:
+        app: rpc-server
+    spec:
+      containers:
+      - name: rpc-server
+        image: aslw26/rpc-server:latest
+        ports:
+        - containerPort: 8888
+        env:
+        - name: USER_NAME
+          valueFrom:
+            secretKeyRef:
+              name: mongo-secret
+              key: mongo-user
+        - name: USER_PWD
+          valueFrom:
+            secretKeyRef:
+              name: mongo-secret
+              key: mongo-password
+        - name: DB_URL
+          valueFrom:
+            configMapKeyRef:
+              name: mongo-config
+              key: mongo-url
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: rpc-server-service
+spec:
+  selector:
+    app: rpc-server
+  ports:
+    - protocol: TCP
+      port: 8888
+      targetPort: 8888
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: rpc-server-config
+data:
+  rpc-url: rpc-server-service
